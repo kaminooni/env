@@ -39,16 +39,14 @@ const API_VERSION = env('API_VERSION')
   .string()
 ```
 
-## First Step / env(...) function
+## env(...) function
 
 > env(key: string) => EnvVariableBuilder
-
-The firs
 
 This function takes Env variable name, reads this variable from `process.env` and returns the instance
 of `EnvVariableBuilder`
 
-## Builder
+## Builder (EnvVariableBuilder)
 
 Builder helps you to validate, transform, set default, and cast the env variables to a type of your choice.
 
