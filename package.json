@@ -1,7 +1,7 @@
 {
   "name": "@kaminooni/env",
   "description": "Type-save env variables access",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": {
     "name": "kaminooni",
     "url": "https://github.com/kaminooni"
@@ -37,11 +37,11 @@
     "lint:fix": "eslint ./src --ext .ts --fix",
     "test": "jest",
     "test:coverage": "jest --collectCoverage",
-    "prepare" : "npm run build",
-    "prepublishOnly" : "npm test && npm run lint",
-    "preversion" : "npm run lint",
-    "version" : "git add -A src",
-    "postversion" : "git push && git push --tags"
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint",
+    "preversion": "npm run lint",
+    "version": "git add -A src",
+    "postversion": "git push && git push --tags"
   },
   "devDependencies": {
     "@types/jest": "^29.2.0",
