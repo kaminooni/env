@@ -1,6 +1,6 @@
 # @kaminooni/env
 
-Easy yet type-safe access to process.env variables.
+Simple, declarative, and type-safe access to process.env variables.
 
 ## Usage
 
@@ -12,154 +12,78 @@ enum Environment {
   Development = 'development'
 }
 
-const ENVIRONMENT: Environment = env('NODE_ENV')
-  .required()
-  .enum(Environment)
-
-const DEBUG = env('DEBUG')
-  .default(false)
-  .boolean()
-
-const APP_NAME = env('APP_NAME')
-  .default('My App')
-  .trim()
-  .string()
-
-const APP_SECRET = env('APP_SECRET')
-  .required()
-  .string()
-
-const SERVER_PORT = env('SERVER_PORT')
-  .default(3000)
-  .range(0, 65536)
-
-const API_VERSION = env('API_VERSION')
-  .permit(['v1', 'v2', 'v3'])
-  .default('v3')
-  .string()
+const config = {
+  environment: env('NODE_ENV').enum(Environment),
+  debug: env('DEBUG', false).boolean(),
+  port: env('PORT', 3000).range(0, 65536),
+  app: {
+    name: env('APP_NAME', 'My App').string(),
+    secret: env('APP_SECRET').string(),
+    apiVersion: env('API_VERSION', 'v3').whitelist(['v1', 'v2', 'v3']),
+    emails: env('EMAILS', ['myemail@example.com']).json<string[]>(),
+    retries: env('RETRIES', 5).number(),
+  },
+}
 ```
 
 ## env(...) function
 
-> env(key: string) => EnvVariableBuilder
+> env(key: string, defaultValue?: string) => VariableBuilder
 
-This function takes Env variable name, reads this variable from `process.env` and returns the instance
-of `EnvVariableBuilder`
+This function takes Env variable name, reads this variable from `process.env` and returns the instance of `VariableBuilder`
 
-## Builder (EnvVariableBuilder)
+## VariableBuilder
 
-Builder helps you to validate, transform, set default, and cast the env variables to a type of your choice.
-
-### permit(values: string[])
-
-Verifies that value is one of the list.
-
-- This function does nothing if env value is `undefined`
-
-```ts
-const API_VERSION = env('API_VERSION')
-  .permit(['v1', 'v2', 'v3'])
-  .string()
-```
-
-### range(from: number, to: number)
-
-Verifies that value is a number in the specified range.
-
-- Returns number
-- Both limits are inclusive
-
-```ts
-const SERVER_PORT = env('SERVER_PORT')
-  .default(3000)
-  .range(0, 65536)
-```
-
-### required()
-
-Verifies that value is not undefined.
-Throws `MissingRequiredVariableError` if env value is `undefined`
-
-```ts
-const APP_SECRET = env('APP_SECRET')
-  .required()
-  .string()
-```
-
-### default(value: string | number | boolean)
-
-Sets the default value if env value is `undefined`
-
-```ts
-const DEBUG = env('DEBUG')
-  .default(false)
-  .boolean()
-```
-
-### trim()
-
-Trims the env value
-
-- This function does nothing if env value is `undefined`
-
-```ts
-const APP_NAME = env('APP_NAME')
-  .trim()
-  .string()
-```
+VariableBuilder helps you to validate, transform, and cast the env variables to a type of your choice.
+All values are considered required, unless the default value is provided. If you try to access the non-existent variable, the builder will throw an error.
 
 ### string() / toString()
 
 Converts env variable to `string`
 
-- `undefined` value will be converted to empty string `''`
-
 ```ts
-const APP_NAME = env('APP_NAME')
-  .string()
+env('APP_NAME').string()
 ```
 
 ### boolean()
 
 Converts env variable to `boolean`
-
-- Case-insensitive
-- By default, returns `true` if env value equals `'true'`. Returns `false` otherwise.
+Returns `true` if env value equals `'true'` (case-insensitive). Returns `false` otherwise.
 
 ```ts
-const DEBUG = env('DEBUG').boolean()
-```
-
-#### How to change the default list of allowed true values
-
-List of allowed "true" values could be changed by updating the `EnvVariableBuilder.allowedTrueValues` variable
-
-```ts
-import { EnvVariableBuilder } from '@kaminooni/env'
-
-EnvVariableBuilder.allowedTrueValues = ['1']
-
-process.env['DEBUG'] = 1
-
-const DEBUG = env('DEBUG').boolean() // Returns true
+env('DEBUG').boolean()
 ```
 
 ### number()
 
-Converts env variable to `number`
-
-- `undefined` value will be converted to `NaN`
-- Empty string `''` will be converted to `0`
+Converts env variable to `number`.
+> NOTE: Empty string `''` will be converted to `0`.
 
 ```ts
-const MAX_CONNECTIONS = env('MAX_CONNECTIONS').number()
+env('MAX_CONNECTIONS').number()
+```
+
+### whitelist(values: string[])
+
+Verifies that value is in the white list. Throws an `Error` if it's not.
+
+```ts
+env('API_VERSION').whitelist(['v1', 'v2', 'v3'])
+```
+
+### range(from: number, to: number)
+
+Verifies that value is a number in the specified range. Both limits are inclusive. 
+Throws an `Error` if value is not in the specified range.
+
+```ts
+env('SERVER_PORT', 3000).range(0, 65536)
 ```
 
 ### enum()
 
-Converts variable to `enum`
-
-- Throws `UnexpectedValueError` if the value exists, and it is not member of provided Enum
+Converts variable to the member of specified `enum`.
+Throws an `Error` if the value is not a member of the provided Enum.
 
 ```ts
 enum Environment {
@@ -167,7 +91,14 @@ enum Environment {
   Development = 'development'
 }
 
-const ENVIRONMENT: Environment = env('NODE_ENV')
-  .required()
-  .enum(Environment)
+const ENVIRONMENT: Environment = env('NODE_ENV').enum(Environment)
+```
+
+### json()
+Converts env variable to JS object using JSON.parse() function
+
+> NOTE: This functions doesn't check that JSON comply with the specified type.
+
+```ts
+const emails: string[] = env('EMAILS', ['myemail@example.com']).json<string[]>()
 ```
